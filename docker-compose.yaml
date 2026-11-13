@@ -1,0 +1,210 @@
+services:
+  api-gateway:
+    build: ./api-gateway
+    container_name: ferrefix-gateway
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - MS_AUTH_URI=http://ms-auth:8081
+      - MS_CATALOGO_URI=http://ms-catalogo:8082
+      - MS_ORDENES_URI=http://ms-ordenes:8083
+      - MS_ARRIENDOS_URI=http://ms-arriendos:8084
+      - MEDIA_DIRECTORY=/app/media
+      - API_DOCS_ENABLED=${API_DOCS_ENABLED:-false}
+    depends_on:
+      ms-auth:
+        condition: service_started
+      ms-catalogo:
+        condition: service_started
+      ms-ordenes:
+        condition: service_started
+      ms-arriendos:
+        condition: service_started
+      media-init:
+        condition: service_completed_successfully
+    volumes:
+      - catalogo-imagenes:/app/media:ro
+    restart: on-failure
+
+  db-auth:
+    image: mysql:8.4
+    container_name: ferrefix-db-auth
+    environment:
+      MYSQL_DATABASE: ferrefix_auth
+      MYSQL_USER: ferrefix_auth
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Configura DB_PASSWORD en .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configura MYSQL_ROOT_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-auth-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysql --protocol=TCP -h 127.0.0.1 -u\"$$MYSQL_USER\" ferrefix_auth -e 'SELECT 1' > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: on-failure
+
+  ms-auth:
+    build: ./auth
+    container_name: ferrefix-ms-auth
+    depends_on:
+      db-auth:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8081:8081"
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db-auth:3306/ferrefix_auth
+      - SPRING_DATASOURCE_USERNAME=ferrefix_auth
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:?Configura DB_PASSWORD en .env}
+      - JWT_SECRET=${JWT_SECRET:?Configura JWT_SECRET en .env}
+      - SEED_USERS_ENABLED=${SEED_USERS_ENABLED:-true}
+      - SEED_ADMIN_EMAIL=${SEED_ADMIN_EMAIL:-admin@ferrefix.test}
+      - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD:-}
+      - SEED_CLIENTE1_EMAIL=${SEED_CLIENTE1_EMAIL:-cliente1@ferrefix.test}
+      - SEED_CLIENTE1_PASSWORD=${SEED_CLIENTE1_PASSWORD:-}
+      - SEED_CLIENTE2_EMAIL=${SEED_CLIENTE2_EMAIL:-cliente2@ferrefix.test}
+      - SEED_CLIENTE2_PASSWORD=${SEED_CLIENTE2_PASSWORD:-}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      - API_DOCS_ENABLED=${API_DOCS_ENABLED:-false}
+    restart: on-failure
+
+  db-catalogo:
+    image: mysql:8.4
+    container_name: ferrefix-db-catalogo
+    environment:
+      MYSQL_DATABASE: ferrefix_catalogo
+      MYSQL_USER: ferrefix_catalogo
+      MYSQL_PASSWORD: ${CATALOGO_DB_PASSWORD:?Configura CATALOGO_DB_PASSWORD en .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configura MYSQL_ROOT_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - mysql-catalogo-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysql --protocol=TCP -h 127.0.0.1 -u\"$$MYSQL_USER\" ferrefix_catalogo -e 'SELECT 1' > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: on-failure
+
+  ms-catalogo:
+    build: ./catalogo
+    container_name: ferrefix-ms-catalogo
+    depends_on:
+      db-catalogo:
+        condition: service_healthy
+      media-init:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8082:8082"
+    environment:
+      - SERVER_PORT=8082
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db-catalogo:3306/ferrefix_catalogo
+      - SPRING_DATASOURCE_USERNAME=ferrefix_catalogo
+      - SPRING_DATASOURCE_PASSWORD=${CATALOGO_DB_PASSWORD:?Configura CATALOGO_DB_PASSWORD en .env}
+      - MS_AUTH_URI=http://ms-auth:8081
+      - MEDIA_DIRECTORY=/app/media
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      - API_DOCS_ENABLED=${API_DOCS_ENABLED:-false}
+    volumes:
+      - catalogo-imagenes:/app/media
+    restart: on-failure
+
+  db-ordenes:
+    image: mysql:8.4
+    container_name: ferrefix-db-ordenes
+    environment:
+      MYSQL_DATABASE: ferrefix_ordenes
+      MYSQL_USER: ferrefix_ordenes
+      MYSQL_PASSWORD: ${ORDENES_DB_PASSWORD:?Configura ORDENES_DB_PASSWORD en .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configura MYSQL_ROOT_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:3308:3306"
+    volumes:
+      - mysql-ordenes-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysql --protocol=TCP -h 127.0.0.1 -u\"$$MYSQL_USER\" ferrefix_ordenes -e 'SELECT 1' > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: on-failure
+
+  ms-ordenes:
+    build: ./ordenes
+    container_name: ferrefix-ms-ordenes
+    depends_on:
+      db-ordenes:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8083:8083"
+    environment:
+      - SERVER_PORT=8083
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db-ordenes:3306/ferrefix_ordenes
+      - SPRING_DATASOURCE_USERNAME=ferrefix_ordenes
+      - SPRING_DATASOURCE_PASSWORD=${ORDENES_DB_PASSWORD:?Configura ORDENES_DB_PASSWORD en .env}
+      - MS_CATALOGO_URI=http://ms-catalogo:8082
+      - MS_AUTH_URI=http://ms-auth:8081
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      - API_DOCS_ENABLED=${API_DOCS_ENABLED:-false}
+    restart: on-failure
+
+  db-arriendos:
+    image: mysql:8.4
+    container_name: ferrefix-db-arriendos
+    environment:
+      MYSQL_DATABASE: ferrefix_arriendos
+      MYSQL_USER: ferrefix_arriendos
+      MYSQL_PASSWORD: ${ARRIENDOS_DB_PASSWORD:?Configura ARRIENDOS_DB_PASSWORD en .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configura MYSQL_ROOT_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:3309:3306"
+    volumes:
+      - mysql-arriendos-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysql --protocol=TCP -h 127.0.0.1 -u\"$$MYSQL_USER\" ferrefix_arriendos -e 'SELECT 1' > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: on-failure
+
+  ms-arriendos:
+    build: ./arriendos
+    container_name: ferrefix-ms-arriendos
+    depends_on:
+      db-arriendos:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8084:8084"
+    environment:
+      - SERVER_PORT=8084
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db-arriendos:3306/ferrefix_arriendos
+      - SPRING_DATASOURCE_USERNAME=ferrefix_arriendos
+      - SPRING_DATASOURCE_PASSWORD=${ARRIENDOS_DB_PASSWORD:?Configura ARRIENDOS_DB_PASSWORD en .env}
+      - MS_AUTH_URI=http://ms-auth:8081
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      - API_DOCS_ENABLED=${API_DOCS_ENABLED:-false}
+    restart: on-failure
+
+  media-init:
+    image: eclipse-temurin:21-jre
+    container_name: ferrefix-media-init
+    user: "0:0"
+    volumes:
+      - ./media:/initial:ro
+      - catalogo-imagenes:/data
+    command: ["sh", "-c", "cp -rn /initial/. /data/ && chown -R 10001:10001 /data"]
+    restart: "no"
+
+volumes:
+  mysql-auth-data:
+  mysql-catalogo-data:
+  mysql-ordenes-data:
+  mysql-arriendos-data:
+  catalogo-imagenes:

@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: api-gateway
+  servlet:
+    multipart:
+      max-file-size: 6MB
+      max-request-size: 7MB
+  mvc:
+    static-path-pattern: /media/**
+  web:
+    resources:
+      static-locations: "file:${MEDIA_DIRECTORY:../media}/"
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: arriendos-maquinas-legacy
+              uri: ${MS_ARRIENDOS_URI:http://localhost:8084}
+              predicates:
+                - Path=/api/v1/ordenes/maquinas,/api/v1/ordenes/maquinas/**
+              filters:
+                - RewritePath=/api/v1/ordenes/maquinas(?<resto>/?.*), /api/v1/arriendos/maquinas$\{resto}
+            - id: arriendos-contratos-legacy
+              uri: ${MS_ARRIENDOS_URI:http://localhost:8084}
+              predicates:
+                - Path=/api/v1/ordenes/arriendos
+              filters:
+                - SetPath=/api/v1/arriendos/contratos
+            - id: arriendos
+              uri: ${MS_ARRIENDOS_URI:http://localhost:8084}
+              predicates:
+                - Path=/api/v1/arriendos/**
+            - id: arriendos-openapi
+              uri: ${MS_ARRIENDOS_URI:http://localhost:8084}
+              predicates:
+                - Path=/arriendos/v3/api-docs/**
+              filters:
+                - StripPrefix=1
+            - id: ordenes
+              uri: ${MS_ORDENES_URI:http://localhost:8083}
+              predicates:
+                - Path=/api/v1/ordenes/**
+            - id: ordenes-openapi
+              uri: ${MS_ORDENES_URI:http://localhost:8083}
+              predicates:
+                - Path=/ordenes/v3/api-docs/**
+              filters:
+                - StripPrefix=1
+            - id: catalogo
+              uri: ${MS_CATALOGO_URI:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/catalogo/**
+            - id: catalogo-openapi
+              uri: ${MS_CATALOGO_URI:http://localhost:8082}
+              predicates:
+                - Path=/catalogo/v3/api-docs/**
+              filters:
+                - StripPrefix=1
+            - id: auth
+              uri: ${MS_AUTH_URI:http://localhost:8081}
+              predicates:
+                - Path=/api/v1/auth/**,/api/v1/admin/usuarios
+            - id: auth-openapi
+              uri: ${MS_AUTH_URI:http://localhost:8081}
+              predicates:
+                - Path=/auth/v3/api-docs/**
+              filters:
+                - StripPrefix=1
+
+server:
+  port: ${SERVER_PORT:8080}
+
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:false}
+  swagger-ui:
+    enabled: ${API_DOCS_ENABLED:false}
+    disable-swagger-default-url: true
+    urls:
+      - name: Órdenes
+        url: /ordenes/v3/api-docs
+      - name: Arriendos
+        url: /arriendos/v3/api-docs
+      - name: Catálogo
+        url: /catalogo/v3/api-docs
+      - name: Auth
+        url: /auth/v3/api-docs

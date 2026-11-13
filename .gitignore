@@ -1,0 +1,10 @@
+.env
+.env.*
+.env.example
+.cache/
+storage/
+**/target/
+*.log
+docs
+# Respaldos de datos locales
+backups/
