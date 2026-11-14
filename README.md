@@ -105,6 +105,7 @@ Completar las siguientes variables:
 - `DB_PASSWORD`, `CATALOGO_DB_PASSWORD`, `ORDENES_DB_PASSWORD`, `ARRIENDOS_DB_PASSWORD`
 - `MYSQL_ROOT_PASSWORD`
 - `JWT_SECRET` (Base64 de 32 bytes aleatorios)
+- `JWT_ACCESS_TOKEN_TTL` (opcional, `8h` por defecto; vigencia del token)
 - `SEED_*` (contraseñas de las cuentas iniciales)
 
 ### 2. Generar los JAR

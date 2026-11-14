@@ -48,6 +48,31 @@ CREATE TABLE arriendos (
 );
 --rollback DROP TABLE arriendos; DROP TABLE maquina_especificaciones; DROP TABLE maquinas;
 
+
+--changeset ferrefix:005-pagos-webpay
+CREATE TABLE pagos_webpay (
+    id_pedido VARCHAR(36) NOT NULL PRIMARY KEY,
+    buy_order VARCHAR(26) NOT NULL,
+    token VARCHAR(64) NOT NULL,
+    session_id VARCHAR(61) NOT NULL,
+    monto DECIMAL(16,0) NOT NULL,
+    estado VARCHAR(20) NOT NULL,
+    codigo_respuesta INT,
+    codigo_autorizacion VARCHAR(10),
+    tipo_pago VARCHAR(5),
+    cuotas INT,
+    tarjeta_ultimos4 VARCHAR(19),
+    fecha_transaccion TIMESTAMP(6) NULL,
+    fecha_creacion TIMESTAMP(6) NOT NULL,
+    fecha_actualizacion TIMESTAMP(6) NOT NULL,
+    CONSTRAINT fk_pago_pedido FOREIGN KEY (id_pedido) REFERENCES pedidos(id),
+    CONSTRAINT uq_pago_buy_order UNIQUE (buy_order),
+    CONSTRAINT uq_pago_token UNIQUE (token),
+    CONSTRAINT ck_pago_estado CHECK (estado IN ('INICIADO','AUTORIZADO','RECHAZADO','ABORTADO','EXPIRADO')),
+    INDEX idx_pago_estado_fecha (estado, fecha_creacion)
+);
+--rollback DROP TABLE pagos_webpay;
+
 --changeset ferrefix:002-seed-maquinas
 INSERT INTO maquinas (id, nombre, marca, categoria, tarifa_dia, imagen, incluye, estado) VALUES ('MAQ-BOSCH-01', 'Martillo Demoledor Bosch GSH 16-28 Professional 1750W', 'Bosch', 'Demolición y Perforación Pesada', 28990, '/media/maquinarias/arriendo-bosch.webp', 'Cincel de punta, cincel plano, paño de limpieza y maletín de transporte con ruedas', 'DISPONIBLE');
 INSERT INTO maquina_especificaciones (id_maquina, atributo, valor) VALUES ('MAQ-BOSCH-01', 'Potencia Absorbida', '1.750 Watts');

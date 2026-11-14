@@ -49,4 +49,9 @@ public class PedidoRepository {
                 rs.getBigDecimal("subtotal"), rs.getBigDecimal("despacho"), rs.getBigDecimal("total"), rs.getString("estado"),
                 rs.getString("metodo_pago"), rs.getString("metodo_entrega"), rs.getString("indicaciones")), id);
     }
+
+    /** Cambio de estado condicional: solo si el pedido sigue en `desde` (evita pisar estados finales). */
+    public int cambiarEstado(String id, String desde, String hacia) {
+        return jdbc.update("UPDATE pedidos SET estado = ? WHERE id = ? AND estado = ?", hacia, id, desde);
+    }
 }

@@ -3,11 +3,9 @@ package ferrefix.ordenes.service;
 import ferrefix.ordenes.model.*;
 import ferrefix.ordenes.repository.CarritoRepository;
 import ferrefix.ordenes.repository.PedidoRepository;
-
-import ferrefix.ordenes.dto.ComercioDtos;
+import ferrefix.ordenes.dto.ComercioDtos.CrearPedido;
 import ferrefix.ordenes.dto.PerfilUsuario;
 
-import static ferrefix.ordenes.dto.ComercioDtos.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
@@ -18,8 +16,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service @Transactional
 public class ComercioService {
-    // Este flujo confirma un pago simulado al registrar la compra, sin pasarela bancaria.
-    private static final String ESTADO_PAGO_SIMULADO = "Pagado";
+    // flujo de pago simulado con WebPay
+    private static final String ESTADO_PENDIENTE_PAGO = "Pendiente de pago";
+    private static final String METODO_TRANSFERENCIA = "Transferencia Bancaria";
     private final CarritoRepository carritos;
     private final PedidoRepository pedidos;
     private final CatalogoClient catalogo;
@@ -105,9 +104,10 @@ public class ComercioService {
         var cliente = new ClientePedido(c.nombre().strip(), c.rut().replace(".", "").toUpperCase(), c.email().strip(),
                 c.telefono().strip(), c.direccion().strip(), c.region(), c.comuna());
         var pedido = new Pedido(id, perfil == null ? null : perfil.idUsuario(), fecha, cliente, items,
-                subtotal, despacho, subtotal.add(despacho), ESTADO_PAGO_SIMULADO, datos.metodoPago(), datos.metodoEntrega(), datos.indicaciones());
+                subtotal, despacho, subtotal.add(despacho), ESTADO_PENDIENTE_PAGO, datos.metodoPago(), datos.metodoEntrega(), datos.indicaciones());
         pedidos.guardar(propietario, pedido);
-        carritos.vaciar(propietario);
+        // Con Webpay el carrito se vacía recién cuando el pago es autorizado (PagoWebpayService).
+        if (METODO_TRANSFERENCIA.equals(datos.metodoPago())) carritos.vaciar(propietario);
         return pedidos.buscar(id);
     }
 
@@ -125,6 +125,15 @@ public class ComercioService {
         int resto=11-suma%11;
         String dv=resto==11?"0":resto==10?"K":String.valueOf(resto);
         if (!rut.endsWith("-"+dv)) throw error(HttpStatus.BAD_REQUEST, "El RUT no es válido.");
+    }
+
+    @Transactional(readOnly = true)
+    public Pedido obtenerPedido(String id, String propietario, PerfilUsuario perfil) {
+        var duenio = pedidos.propietario(id)
+                .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Pedido no encontrado."));
+        boolean admin = perfil != null && perfil.administrador();
+        if (!admin && !duenio.equals(propietario)) throw error(HttpStatus.NOT_FOUND, "Pedido no encontrado.");
+        return pedidos.buscar(id);
     }
 
     private ResponseStatusException error(HttpStatus status, String mensaje) { return new ResponseStatusException(status, mensaje); }

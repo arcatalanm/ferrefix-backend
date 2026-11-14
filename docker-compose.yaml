@@ -61,6 +61,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=ferrefix_auth
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:?Configura DB_PASSWORD en .env}
       - JWT_SECRET=${JWT_SECRET:?Configura JWT_SECRET en .env}
+      - JWT_ACCESS_TOKEN_TTL=${JWT_ACCESS_TOKEN_TTL:-8h}
       - SEED_USERS_ENABLED=${SEED_USERS_ENABLED:-true}
       - SEED_ADMIN_EMAIL=${SEED_ADMIN_EMAIL:-admin@ferrefix.test}
       - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD:-}
@@ -152,6 +153,12 @@ services:
       - MS_AUTH_URI=http://ms-auth:8081
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
       - API_DOCS_ENABLED=${API_DOCS_ENABLED:-false}
+      
+      - WEBPAY_URL=${WEBPAY_URL:-https://webpay3gint.transbank.cl}
+      - WEBPAY_COMMERCE_CODE=${WEBPAY_COMMERCE_CODE:-597055555532}
+      - WEBPAY_API_KEY=${WEBPAY_API_KEY:-579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C}
+      - WEBPAY_RETURN_URL=${WEBPAY_RETURN_URL:-http://localhost:8080/api/v1/ordenes/pagos/webpay/retorno}
+      - WEBPAY_FRONTEND_URL=${WEBPAY_FRONTEND_URL:-http://localhost:5173/pago/resultado}
     restart: on-failure
 
   db-arriendos:
