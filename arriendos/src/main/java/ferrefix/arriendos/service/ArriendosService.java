@@ -119,8 +119,7 @@ public class ArriendosService {
         maquina.setImagen(datos.imagen());
         maquina.setIncluye(datos.incluye());
         maquina.setEstado(datos.estado());
-        maquina.getEspecificaciones().clear();
-        maquina.getEspecificaciones().putAll(datos.especificaciones());
+        maquina.setDescripcionDetalle(datos.descripcionDetalle().strip());
     }
 
     private MaquinaResponse maquinaResponse(Maquina m, Arriendo vigente, PerfilUsuario perfil) {
@@ -128,7 +127,7 @@ public class ArriendosService {
                 && (perfil.administrador() || perfil.idUsuario().equals(vigente.getIdUsuario()));
         String estado = vigente != null ? "Arrendada" : m.getEstado() == Maquina.Estado.MANTENCION ? "Mantención" : "Disponible";
         return new MaquinaResponse(m.getId(), m.getNombre(), m.getMarca(), m.getCategoria(), m.getTarifaDia(),
-                m.getImagen(), m.getIncluye(), new java.util.TreeMap<>(m.getEspecificaciones()), estado,
+                m.getImagen(), m.getIncluye(), m.getDescripcionDetalle(), estado,
                 puedeVerUsuario ? vigente.getIdUsuario() : null, puedeVerUsuario ? vigente.getNombreUsuario() : null,
                 vigente == null ? null : vigente.getFechaInicio(), vigente == null ? null : vigente.getFechaTermino());
     }

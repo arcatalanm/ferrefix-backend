@@ -553,3 +553,23 @@ CREATE TABLE ofertas (
     CONSTRAINT ck_oferta_indice CHECK (indice BETWEEN 0 AND 3)
 );
 --rollback DROP TABLE ofertas;
+
+--changeset ferrefix:catalogo-008-descripcion-detalle
+ALTER TABLE productos ADD COLUMN descripcion_detalle LONGTEXT NULL;
+SET SESSION group_concat_max_len = 1000000;
+UPDATE productos p
+LEFT JOIN (
+    SELECT producto_id, GROUP_CONCAT(CONCAT('<li><strong>',
+        REPLACE(REPLACE(REPLACE(clave, '&', '&amp;'), '<', '&lt;'), '>', '&gt;'),
+        ':</strong> ',
+        REPLACE(REPLACE(REPLACE(valor, '&', '&amp;'), '<', '&lt;'), '>', '&gt;'),
+        '</li>') ORDER BY clave SEPARATOR '') AS items
+    FROM producto_especificaciones GROUP BY producto_id
+) e ON e.producto_id = p.id_producto
+SET p.descripcion_detalle = CONCAT('<p>',
+    REPLACE(REPLACE(REPLACE(p.descripcion_larga, '&', '&amp;'), '<', '&lt;'), '>', '&gt;'), '</p>',
+    IF(e.items IS NULL, '', CONCAT('<h3>Ficha técnica</h3><ul>', e.items, '</ul>')));
+ALTER TABLE productos MODIFY descripcion_detalle LONGTEXT NOT NULL;
+ALTER TABLE productos DROP COLUMN descripcion_larga;
+DROP TABLE producto_especificaciones;
+--rollback SELECT 1;

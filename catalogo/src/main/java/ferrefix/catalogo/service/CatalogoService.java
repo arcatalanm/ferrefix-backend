@@ -54,7 +54,7 @@ public class CatalogoService {
         p.setNombre(d.nombre().strip()); p.setMarca(d.marca().strip()); p.setCategoria(d.categoria().strip());
         p.setPrecioVenta(d.precioVenta()); p.setStock(d.stock());
         p.setUnidadVenta(d.unidadVenta()); p.setContenidoPresentacion(d.contenidoPresentacion().strip());
-        p.setDescripcionCorta(d.descripcionCorta().strip()); p.setDescripcionLarga(d.descripcionLarga().strip());
-        p.setImagen(d.imagen()); p.getEspecificaciones().clear(); p.getEspecificaciones().putAll(d.especificaciones());
+        p.setDescripcionCorta(d.descripcionCorta().strip()); p.setDescripcionDetalle(d.descripcionDetalle().strip());
+        p.setImagen(d.imagen());
     }
 }

@@ -75,3 +75,20 @@ INSERT INTO maquina_especificaciones (id_maquina, atributo, valor) VALUES ('MAQ-
 INSERT INTO maquina_especificaciones (id_maquina, atributo, valor) VALUES ('MAQ-PLAC-04', 'Motor', '4 Tiempos 196cc OHV');
 --rollback DELETE FROM maquina_especificaciones WHERE id_maquina IN ('MAQ-BOSCH-01', 'MAQ-BET-02', 'MAQ-GEN-03', 'MAQ-PLAC-04'); DELETE FROM maquinas WHERE id IN ('MAQ-BOSCH-01', 'MAQ-BET-02', 'MAQ-GEN-03', 'MAQ-PLAC-04');
 
+--changeset ferrefix:003-descripcion-detalle
+ALTER TABLE maquinas ADD COLUMN descripcion_detalle LONGTEXT NULL;
+SET SESSION group_concat_max_len = 1000000;
+UPDATE maquinas m
+LEFT JOIN (
+    SELECT id_maquina, GROUP_CONCAT(CONCAT('<li><strong>',
+        REPLACE(REPLACE(REPLACE(atributo, '&', '&amp;'), '<', '&lt;'), '>', '&gt;'),
+        ':</strong> ',
+        REPLACE(REPLACE(REPLACE(valor, '&', '&amp;'), '<', '&lt;'), '>', '&gt;'),
+        '</li>') ORDER BY atributo SEPARATOR '') AS items
+    FROM maquina_especificaciones GROUP BY id_maquina
+) e ON e.id_maquina = m.id
+SET m.descripcion_detalle = IF(e.items IS NULL, '', CONCAT('<h3>Ficha técnica</h3><ul>', e.items, '</ul>'));
+ALTER TABLE maquinas MODIFY descripcion_detalle LONGTEXT NOT NULL;
+DROP TABLE maquina_especificaciones;
+--rollback SELECT 1;
+

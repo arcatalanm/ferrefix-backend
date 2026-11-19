@@ -19,13 +19,8 @@ public class Producto {
     @Column(nullable=false, length=20) private String unidadVenta = "unidad";
     @Column(nullable=false, length=120) private String contenidoPresentacion = "1 unidad";
     @Column(nullable=false, length=300) private String descripcionCorta;
-    @Column(nullable=false, length=4000) private String descripcionLarga;
+    @Lob @Column(name="descripcion_detalle", nullable=false, columnDefinition="LONGTEXT") private String descripcionDetalle;
     @Column(nullable=false, length=255) private String imagen;
     @Column(nullable=false) private boolean activo = true;
     @Column(nullable=false) private Instant fechaCreacion = Instant.now();
-    @ElementCollection(fetch=FetchType.EAGER)
-    @CollectionTable(name="producto_especificaciones", joinColumns=@JoinColumn(name="producto_id"))
-    @MapKeyColumn(name="clave", length=120)
-    @Column(name="valor", length=500)
-    private Map<String,String> especificaciones = new LinkedHashMap<>();
 }

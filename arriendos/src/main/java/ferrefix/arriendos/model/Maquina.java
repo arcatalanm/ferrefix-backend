@@ -2,8 +2,6 @@ package ferrefix.arriendos.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,12 +27,10 @@ public class Maquina {
     private String imagen;
     @Column(length = 500)
     private String incluye;
+    @Lob
+    @Column(name = "descripcion_detalle", nullable = false, columnDefinition = "LONGTEXT")
+    private String descripcionDetalle = "";
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Estado estado = Estado.DISPONIBLE;
-    @ElementCollection
-    @CollectionTable(name = "maquina_especificaciones", joinColumns = @JoinColumn(name = "id_maquina"))
-    @MapKeyColumn(name = "atributo", length = 80)
-    @Column(name = "valor", nullable = false, length = 200)
-    private Map<String, String> especificaciones = new LinkedHashMap<>();
 }

@@ -6,7 +6,6 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Map;
 
 public final class ArriendosDtos {
     private ArriendosDtos() {}
@@ -19,7 +18,7 @@ public final class ArriendosDtos {
             @Size(max = 500) @Pattern(regexp = "^(/media/[a-zA-Z0-9_./-]+)?$") String imagen,
             @Size(max = 500) String incluye,
             @NotNull Maquina.Estado estado,
-            @NotNull @Size(max = 20) Map<@NotBlank @Size(max = 80) String, @NotBlank @Size(max = 200) String> especificaciones) {}
+            @NotBlank @Size(max = 100000) String descripcionDetalle) {}
 
     public record ArriendoRequest(
             @NotBlank @Size(max = 40) String idMaquina,
@@ -34,7 +33,7 @@ public final class ArriendosDtos {
             String telefono, String direccion, String region, String comuna) {}
 
     public record MaquinaResponse(String idMaquina, String nombre, String marca, String categoria,
-            BigDecimal tarifaDia, String imagen, String incluye, Map<String, String> especificaciones,
+            BigDecimal tarifaDia, String imagen, String incluye, String descripcionDetalle,
             String estado, String idUsuario, String nombreUsuario, LocalDate fechaInicio, LocalDate fechaTermino) {}
 
     public record ArriendoResponse(String idContrato, Instant fechaContrato, String idMaquina,
